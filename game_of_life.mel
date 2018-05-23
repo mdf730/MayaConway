@@ -1,0 +1,419 @@
+//Initialize Global Variables
+string $toolCreate = "createTool";
+string $toolName = "Conway's Game of Life";
+global string $board = "board";
+global int $x_val = 0;
+global int $y_val = 0;
+global int $play_job = 0;
+global int $flag = 0;
+
+
+global string $dead = "x";
+$dead = `shadingNode -asShader lambert -name "dead"`;
+setAttr ($dead + ".color") 0 0 0;
+global string $alive = "x";
+$alive = `shadingNode -asShader lambert -name "alive"`;
+setAttr ($alive + ".color") 1 1 1;
+
+// Initialize Game Board
+global matrix $board_vals[30][30];
+for ($i = 0; $i < 30; $i++){
+    for ($j = 0; $j < 30; $j++){
+        $board_vals[$i][$j] = 0;
+    }
+}
+
+// Create GUI
+if (`window -exists $toolCreate`){
+    deleteUI $toolCreate;
+}
+
+if (`objExists "board"`){
+    select -r "board";
+    doDelete;
+}
+
+window -t $toolName -w 324 -h 320 $toolCreate;
+
+columnLayout -adjustableColumn true;
+
+frameLayout -label "Preset Layouts" -bs "etchedIn" -cll 1 -cl 1;
+
+gridLayout -nc 4 -cwh 81 50;
+
+button -label "Glider" -c "glider_button_clicked";
+button -label "Exploder" -c "exploder_button_clicked";
+button -label "Row of 10" -c "row_button_clicked";
+button -label "Tumbler" -c "tumbler_button_clicked";
+
+setParent ..;
+setParent ..;
+
+frameLayout -label "Custom Cells" -bs "etchedIn" -cll 1 -cl 1;
+
+columnLayout -w 324;
+intSliderGrp -label "X" -field true -fieldMinValue 0 -fieldMaxValue 30 -minValue 0 -maxValue 30 -value 0 -cw 1 45 "x_value";
+intSliderGrp -label "Y" -field true -fieldMinValue 0 -fieldMaxValue 30 -minValue 0 -maxValue 30 -value 0 -cw 1 45 "y_value";
+
+$x_val = `intSliderGrp -query -value "x_value"`;
+$y_val = `intSliderGrp -query -value "y_value"`;
+
+setParent ..;
+
+gridLayout -nc 2 -cwh 162 50;
+button -label "Add Cell" -c "add_cell_button_clicked";
+button -label "Remove Cell" -c "rm_cell_button_clicked";
+
+setParent ..;
+setParent ..;
+
+frameLayout -label "Run Simulation" -bs "etchedIn" -cll 1 -cl 1;
+
+gridLayout -nc 3 -cwh 108 50;
+
+button -label "Pause" -c "pause_button_clicked";
+button -label "Step >" -c "step_forward_button_clicked";
+button -label "Play >>" -c "play_button_clicked";
+
+setParent ..;
+setParent ..;
+
+button -label "Clear Board" -c "clear_button_clicked";
+
+setParent ..;
+
+init_board();
+showWindow $toolCreate;
+
+// FUNCTIONS
+
+// Preset Layouts
+global proc glider_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $alive;
+    clear_button_clicked();
+    
+    $board_vals[5][24] = 1;
+    $board_vals[6][24] = 1;
+    $board_vals[6][26] = 1;
+    $board_vals[7][24] = 1;
+    $board_vals[7][25] = 1;
+    
+    select -r ($board + ".f[786]");
+    select -tgl ($board + ".f[725]");
+    select -tgl ($board + ".f[727]");
+    select -tgl ($board + ".f[757]");
+    select -tgl ($board + ".f[726]");
+    
+    hyperShade -assign $alive;
+    select -cl;
+}
+
+global proc exploder_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $alive;
+    clear_button_clicked;
+   
+    $board_vals[13][12] = 1;
+    $board_vals[13][13] = 1;
+    $board_vals[13][14] = 1;
+    $board_vals[13][15] = 1;
+    $board_vals[13][16] = 1;
+    $board_vals[15][16] = 1;
+    $board_vals[15][12] = 1;
+    $board_vals[17][12] = 1;
+    $board_vals[17][13] = 1;
+    $board_vals[17][14] = 1;
+    $board_vals[17][15] = 1;
+    $board_vals[17][16] = 1;
+    
+    select -r ($board + ".f[375]");
+    select -tgl ($board + ".f[495]");
+    select -tgl ($board + ".f[497]");
+    select -tgl ($board + ".f[493]");
+    select -tgl ($board + ".f[467]");
+    select -tgl ($board + ".f[463]");
+    select -tgl ($board + ".f[433]");
+    select -tgl ($board + ".f[403]");
+    select -tgl ($board + ".f[373]");
+    select -tgl ($board + ".f[377]");
+    select -tgl ($board + ".f[407]");
+    select -tgl ($board + ".f[437]");
+    
+    hyperShade -assign $alive;
+    select -cl;
+    
+}
+
+global proc row_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $alive;
+    clear_button_clicked;
+    
+    $board_vals[10][15] = 1;
+    $board_vals[11][15] = 1;
+    $board_vals[12][15] = 1;
+    $board_vals[13][15] = 1;
+    $board_vals[14][15] = 1;
+    $board_vals[15][15] = 1;
+    $board_vals[16][15] = 1;
+    $board_vals[17][15] = 1;
+    $board_vals[18][15] = 1;
+    $board_vals[19][15] = 1;
+        
+    select -r ($board + ".f[460]");
+    select -tgl ($board + ".f[461]");
+    select -tgl ($board + ".f[462]");
+    select -tgl ($board + ".f[463]");
+    select -tgl ($board + ".f[464]");
+    select -tgl ($board + ".f[465]");
+    select -tgl ($board + ".f[466]");
+    select -tgl ($board + ".f[467]");
+    select -tgl ($board + ".f[468]");
+    select -tgl ($board + ".f[469]");
+    
+    hyperShade -assign $alive;
+    select -cl;
+    
+}
+
+global proc tumbler_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $alive;
+    clear_button_clicked;
+    
+    $board_vals[12][15] = 1;
+    $board_vals[12][16] = 1;
+    $board_vals[12][17] = 1;
+    $board_vals[13][12] = 1;
+    $board_vals[13][13] = 1;
+    $board_vals[13][17] = 1;
+    $board_vals[14][16] = 1;
+    $board_vals[14][15] = 1;
+    $board_vals[14][14] = 1;
+    $board_vals[14][13] = 1;
+    $board_vals[14][12] = 1;
+    $board_vals[18][15] = 1;
+    $board_vals[18][16] = 1;
+    $board_vals[18][17] = 1;
+    $board_vals[17][12] = 1;
+    $board_vals[17][13] = 1;
+    $board_vals[17][17] = 1;
+    $board_vals[16][16] = 1;
+    $board_vals[16][15] = 1;
+    $board_vals[16][14] = 1;
+    $board_vals[16][13] = 1;
+    $board_vals[16][12] = 1;
+    
+    select -r ($board + ".f[373]");
+    select -tgl ($board + ".f[374]");
+    select -tgl ($board + ".f[403]");
+    select -tgl ($board + ".f[404]");
+    select -tgl ($board + ".f[376]");
+    select -tgl ($board + ".f[377]");
+    select -tgl ($board + ".f[406]");
+    select -tgl ($board + ".f[407]");
+    select -tgl ($board + ".f[434]");
+    select -tgl ($board + ".f[464]");
+    select -tgl ($board + ".f[494]");
+    select -tgl ($board + ".f[523]");
+    select -tgl ($board + ".f[522]");
+    select -tgl ($board + ".f[492]");
+    select -tgl ($board + ".f[462]");
+    select -tgl ($board + ".f[436]");
+    select -tgl ($board + ".f[466]");
+    select -tgl ($board + ".f[496]");
+    select -tgl ($board + ".f[527]");
+    select -tgl ($board + ".f[528]");
+    select -tgl ($board + ".f[498]");
+    select -tgl ($board + ".f[468]");
+        
+    hyperShade -assign $alive;
+    select -cl;
+    
+}
+
+// Custom Cells
+global proc add_cell_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $alive;
+    global int $x_val;
+    global int $y_val;
+    
+    $x_val = `intSliderGrp -query -value "x_value"`;
+    $y_val = `intSliderGrp -query -value "y_value"`;
+    
+    $board_vals[$x_val][$y_val] = 1;
+    
+    int $cell = $y_val * 30 + $x_val;
+    select -r ($board + ".f[" + $cell + "]");
+    hyperShade -assign $alive;
+    select -cl;
+}
+
+global proc rm_cell_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $dead;
+    global int $x_val;
+    global int $y_val;
+    
+    $x_val = `intSliderGrp -query -value "x_value"`;
+    $y_val = `intSliderGrp -query -value "y_value"`;
+        
+    $board_vals[$x_val][$y_val] = 0;
+    
+    int $cell = $y_val * 30 + $x_val;
+    select -r ($board + ".f[" + $cell + "]");
+    hyperShade -assign $dead;
+    select -cl;
+}
+
+// Run Simulation
+global proc pause_button_clicked (){
+    global int $play_job;
+    global int $flag;
+    if ($flag == 1){
+        scriptJob -kill $play_job;
+        $flag = 0;
+    }else{
+        print "The simulation is already paused!";
+    }
+}
+
+global proc step_forward_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $dead;
+    global string $alive;
+    
+    // save board state
+    matrix $old_vals[30][30];
+    for ($i = 0; $i < 30; $i++){
+        for ($j = 0; $j < 30; $j++){
+            $old_vals[$i][$j] = $board_vals[$i][$j];
+        }
+    }
+    
+    // iterate each cell
+    for ($i = 0; $i < 30; $i++){
+        for ($j = 0; $j < 30; $j++){
+            // Calculate number of neighbors (with edge cases)
+            int $neighbors = 0;
+            if ($i != 0){
+                $neighbors = $neighbors + $old_vals[$i-1][$j];
+                if ($j != 0){
+                    $neighbors = $neighbors + $old_vals[$i-1][$j-1];
+                }
+                if ($j != 29){
+                    $neighbors = $neighbors + $old_vals[$i-1][$j+1];
+                }
+            }
+            if ($i != 29){
+                $neighbors = $neighbors + $old_vals[$i+1][$j];
+                if ($j != 0){
+                    $neighbors = $neighbors + $old_vals[$i+1][$j-1];
+                }
+                if ($j != 29){
+                    $neighbors = $neighbors + $old_vals[$i+1][$j+1];
+                }
+            }
+            if ($j != 0){
+                $neighbors = $neighbors + $old_vals[$i][$j-1];
+            }
+            if ($j != 29){
+                $neighbors = $neighbors + $old_vals[$i][$j+1];
+            }
+            
+            // If cell is alive:
+            if ($board_vals[$i][$j] == 1){
+                // It dies with < 2 or > 3 neighbors
+                if (($neighbors < 2)||($neighbors > 3)){
+                    $board_vals[$i][$j] = 0;
+                    
+                    $cell = $j * 30 + $i;
+                    $cell_face = (".f[" + $cell + "]");
+                    select -r ($board + $cell_face);
+                    hyperShade -assign $dead;
+                } 
+         
+            // If cell is dead:
+            }else{
+                // It lives with 3 neighbors
+                if ($neighbors == 3){
+                    $board_vals[$i][$j] = 1;
+                    
+                    $cell = $j * 30 + $i;
+                    $cell_face = (".f[" + $cell + "]");
+                    select -r ($board + $cell_face);
+                    hyperShade -assign $alive;
+                } 
+            }
+        }
+    }
+    
+    select -cl;
+}
+
+global proc play_button_clicked (){
+    global int $play_job;
+    global int $flag;
+    
+    if ($flag != 1){
+        $flag = 1;
+        $play_job = `scriptJob -e "idle" "step_forward_button_clicked"`;
+    }else{
+        print "The simulation is already playing!";
+    }
+}
+
+// Clear Function
+global proc clear_button_clicked (){
+    global string $board;
+    global matrix $board_vals[30][30];
+    global string $dead;
+    global int $flag;
+    
+    if ($flag == 1){
+        pause_button_clicked;
+    }
+    
+    for ($i = 0; $i < 30; $i++){
+        for ($j = 0; $j < 30; $j++){
+            $board_vals[$i][$j] = 0;
+        }
+    }  
+
+    select -r $board;
+    doDelete;
+    init_board;
+    select -cl;
+    
+    //for( $i = 0; $i < 30; $i++ ){
+    //    for( $j = 0; $j < 30; $j++ ){
+    //        $cell = $i * 30 + $j;
+    //        $cell_face = (".f[" + $cell + "]");
+    //        select -r ($board + $cell_face);
+    //        hyperShade -assign $dead;
+    //    }
+    //}
+}
+
+// Initialize Game
+global proc init_board (){
+    global string $board;
+    global string $dead;
+    global string $alive;
+    
+    polyPlane -w 30 -h 30 -ax 0 1 0 -sx 30 -sy 30 -n $board;
+    select -r $board;
+    hyperShade -assign $dead;
+    
+    select -cl;
+    
+}
